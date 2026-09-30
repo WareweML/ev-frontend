@@ -1,0 +1,5 @@
+{
+  "title": "Email Verifier",
+  "description": "Check that an email address is real, reachable, and ready to send.",
+  "card": "custom"
+}
