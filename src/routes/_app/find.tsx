@@ -226,7 +226,7 @@ function PersonFind({ title, mode, onMode }: { title: string; mode: "person" | "
               onClick={() => onMode("list")}
               className="inline-flex items-center gap-2 hover:text-foreground"
             >
-              <Upload className="size-4" />
+              <Upload className="size-4 text-primary" />
               Upload a list of names and domains to find
             </button>
           </div>

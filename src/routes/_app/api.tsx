@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, Coins, Eye, EyeOff, FileSpreadsheet, Gauge, Mails, Plus, Trash2, type LucideIcon } from "lucide-react";
+import { Clock, Coins, Eye, EyeOff, FileSpreadsheet, Gauge, KeyRound, Mail, Mails, Plus, Search, Trash2, Users, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button";
 import { Page } from "@/components/page";
@@ -30,11 +30,11 @@ const BASE = "https://api.emailverifier.io";
 type Lang = "curl" | "node" | "python";
 type GroupId = "verify" | "find" | "leads" | "account";
 
-const GROUPS: { id: GroupId; label: string }[] = [
-  { id: "verify", label: "Verify Emails API" },
-  { id: "find", label: "Find Emails API" },
-  { id: "leads", label: "Search Leads API" },
-  { id: "account", label: "Account API" },
+const GROUPS: { id: GroupId; label: string; icon: LucideIcon }[] = [
+  { id: "verify", label: "Verify Emails API", icon: Mail },
+  { id: "find", label: "Find Emails API", icon: Search },
+  { id: "leads", label: "Search Leads API", icon: Users },
+  { id: "account", label: "Account API", icon: KeyRound },
 ];
 
 const LANGS: { id: Lang; label: string }[] = [
@@ -253,20 +253,25 @@ function ApiPage() {
         )}
       </section>
 
-      <div className="mt-6 flex flex-wrap gap-1 rounded-xl bg-card p-1 shadow-border">
-        {GROUPS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => openGroup(item.id)}
-            className={cn(
-              "h-10 rounded-lg px-4 text-sm font-medium",
-              group === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div className="mt-6 inline-flex max-w-full flex-wrap gap-1 rounded-full bg-primary/10 p-1">
+        {GROUPS.map((item) => {
+          const Icon = item.icon;
+          const on = group === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => openGroup(item.id)}
+              className={cn(
+                "inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-medium text-primary",
+                on ? "bg-card text-foreground shadow-border" : "hover:bg-primary/10",
+              )}
+            >
+              <Icon className="size-4" />
+              {item.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-4 overflow-hidden rounded-xl bg-card shadow-border lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
