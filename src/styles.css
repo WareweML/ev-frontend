@@ -16,7 +16,7 @@
   --color-secondary: #eceae3;
   --color-secondary-foreground: #171717;
   --color-muted: #eceae3;
-  --color-muted-foreground: #6f6e69;
+  --color-muted-foreground: #57564f;
   --color-accent: #e7e5de;
   --color-accent-foreground: #171717;
   --color-destructive: #b91c1c;
@@ -33,7 +33,7 @@
 
   --color-safe: #047857;
   --color-safe-soft: #d1fae5;
-  --color-risk: #ca8a04;
+  --color-risk: #8a5a00;
   --color-risk-soft: #fef08a;
   --color-invalid: #b91c1c;
   --color-invalid-soft: #fee2e2;

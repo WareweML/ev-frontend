@@ -5,10 +5,10 @@ export function LogoMark({ className }: { className?: string }) {
     <svg viewBox="0 0 32 32" className={cn("size-8 text-primary", className)} aria-hidden="true">
       <circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" strokeWidth="2" />
       <path
-        d="M8.2 16.4 13.1 21.4 24.2 9.6"
+        d="M10.4 16.4 14.1 20.2 21.8 12.2"
         fill="none"
         stroke="currentColor"
-        strokeWidth="3.4"
+        strokeWidth="2.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

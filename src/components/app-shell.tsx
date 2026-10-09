@@ -84,7 +84,7 @@ function NavItem({
       onClick={onNavigate}
       className={cn(
         "flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150",
-        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted",
       )}
     >
       <Icon className="size-[18px] shrink-0" />
@@ -143,7 +143,7 @@ function SidebarBody({
 }) {
   return (
     <div className="flex h-full flex-col bg-card text-foreground">
-      <div className="border-b border-border px-5 py-4">
+      <div className="flex h-[74px] items-center border-b border-border pl-6 pr-5">
         <Link to="/" onClick={onNavigate}>
           <Logo />
         </Link>
@@ -186,8 +186,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       </Sheet>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-border bg-card px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-30 flex h-[74px] items-center border-b border-border bg-card px-4 sm:px-6">
+          <div className="flex w-full items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
@@ -262,8 +262,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium",
-                  active ? "text-primary" : "text-muted-foreground",
+                  "flex min-h-14 flex-col items-center justify-center gap-0.5 text-sm font-medium",
+                  active ? "text-primary" : "text-foreground",
                 )}
               >
                 <Icon className="size-5" />

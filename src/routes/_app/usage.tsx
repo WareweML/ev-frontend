@@ -318,7 +318,7 @@ function UsagePage() {
                     <td className="px-3 py-3.5 whitespace-nowrap">
                       <div>Credits: {formatNumber(row.spent)}</div>
                       <div>
-                        <span className="text-[#c45c26]">Remaining:</span> {formatNumber(row.remaining)}
+                        <span className="text-[#9a3d10]">Remaining:</span> {formatNumber(row.remaining)}
                       </div>
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap text-muted-foreground">
