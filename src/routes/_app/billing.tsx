@@ -1,136 +1,80 @@
-import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Lock } from "lucide-react";
-import { toast } from "sonner";
-import { BuyCreditsDialog } from "@/components/buy-credits";
+import { Receipt, RefreshCw } from "lucide-react";
+import { CreditsPurchase } from "@/components/credits-purchase";
 import { Page } from "@/components/page";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { formatDate, formatNumber } from "@/lib/format";
-import { PLANS, type PlanId } from "@/lib/plans";
-import { useAppStore, usePlan } from "@/lib/store";
-import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
+import { useAppStore } from "@/lib/store";
 
 export const Route = createFileRoute("/_app/billing")({
   component: BillingPage,
 });
 
-function BillingPage() {
-  const credits = useAppStore((s) => s.credits);
-  const planCredits = useAppStore((s) => s.planCredits);
-  const invoices = useAppStore((s) => s.invoices);
-  const setPlan = useAppStore((s) => s.setPlan);
-  const plan = usePlan();
-  const [buy, setBuy] = useState(false);
-  const pooled = plan.monthlyCredits > 0;
-  const over = pooled && credits > planCredits;
-  const used = pooled && !over ? Math.max(0, planCredits - credits) : 0;
-  const pct = pooled && !over && planCredits > 0 ? Math.min(100, Math.round((used / planCredits) * 1000) / 10) : 0;
+const inFmt = new Intl.NumberFormat("en-IN");
 
-  function switchTo(id: PlanId) {
-    if (id === plan.id) return;
-    setPlan(id);
-    toast.success(id === "subscription" ? "You're on Subscription" : "You're on Pay as you go");
-  }
+function purchaseDate(ts: number) {
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(ts);
+}
+
+function purchaseTime(ts: number) {
+  return new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }).format(ts);
+}
+
+function BillingPage() {
+  const invoices = useAppStore((s) => s.invoices);
+  const you = useAppStore((s) => s.members.find((m) => m.you)?.name);
 
   return (
     <Page>
-      <section className="rounded-xl bg-card p-5 shadow-border sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+      <CreditsPurchase />
+
+      <section className="mt-6 overflow-hidden rounded-xl bg-card shadow-border">
+        <div className="flex items-start justify-between gap-4 px-5 py-4">
           <div>
-            <div className="text-xs text-muted-foreground">{plan.name}</div>
-            <div className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">
-              {formatNumber(credits)}
-              <span className="ml-2 text-base font-normal text-muted-foreground">credits</span>
-            </div>
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <Receipt className="size-4" />
+              Purchase history
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">Credits added to your account.</p>
           </div>
-          <Button onClick={() => setBuy(true)}>Buy Credits</Button>
+          <button type="button" aria-label="Refresh" className="text-muted-foreground">
+            <RefreshCw className="size-4" />
+          </button>
         </div>
-        {pooled && !over ? <Progress value={100 - pct} className="mt-4" /> : null}
-        <p className="mt-3 text-sm text-muted-foreground">
-          {pooled
-            ? `${formatNumber(plan.monthlyCredits)} added each month. Unused credits roll over.`
-            : "Credits never expire."}
-        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-y border-border bg-background text-left text-muted-foreground">
+                <th className="px-5 py-2.5 font-medium">Date</th>
+                <th className="px-3 py-2.5 font-medium">Credits</th>
+                <th className="px-3 py-2.5 font-medium">Bought by</th>
+                <th className="px-3 py-2.5 font-medium">Method</th>
+                <th className="px-5 py-2.5 text-right font-medium">Balance after</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoices.map((inv) => (
+                <tr key={inv.id} className="border-b border-border last:border-0">
+                  <td className="px-5 py-4 whitespace-nowrap">
+                    {purchaseDate(inv.date)} <span className="text-muted-foreground">{purchaseTime(inv.date)}</span>
+                  </td>
+                  <td className="px-3 py-4 font-semibold tabular-nums">+{formatNumber(inv.credits ?? 0)}</td>
+                  <td className="px-3 py-4 whitespace-nowrap">
+                    {inv.buyer ?? you ?? "Kumar Manaswi"}
+                    {inv.buyer === you || !inv.buyer ? (
+                      <span className="ml-2 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-primary">
+                        YOU
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap">{inv.method ?? "Card Payment"}</td>
+                  <td className="px-5 py-4 text-right tabular-nums">{inFmt.format(inv.balanceAfter ?? 0)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
-
-      <div className="mt-6 grid gap-3 lg:grid-cols-2">
-        {PLANS.map((p) => {
-          const current = p.id === plan.id;
-          return (
-            <div
-              key={p.id}
-              className={cn(
-                "flex flex-col rounded-xl bg-card p-5 shadow-border",
-                current && "ring-2 ring-ring",
-              )}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-medium text-muted-foreground">{p.name}</div>
-                {p.id === "subscription" ? <Badge variant="primary">Most popular</Badge> : null}
-              </div>
-              <div className="mt-2 text-3xl font-semibold tracking-tight">
-                {p.price === 0 ? (
-                  <>
-                    $0
-                    <span className="text-sm font-normal text-muted-foreground"> / mo</span>
-                  </>
-                ) : (
-                  <>
-                    ${p.price}
-                    <span className="text-sm font-normal text-muted-foreground"> / mo</span>
-                  </>
-                )}
-              </div>
-              <div className="mt-1 text-sm text-muted-foreground">
-                {p.monthlyCredits
-                  ? `${formatNumber(p.monthlyCredits)} credits each month`
-                  : "Pay only for the credits you use"}
-              </div>
-              <ul className="mt-4 flex-1 space-y-2">
-                {p.included.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className="mt-0.5 size-4 shrink-0 text-safe" />
-                    {f}
-                  </li>
-                ))}
-                {p.locked.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <Lock className="mt-0.5 size-4 shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Button
-                className="mt-5"
-                variant={current ? "outline" : "default"}
-                disabled={current}
-                onClick={() => switchTo(p.id)}
-              >
-                {current ? "Your plan" : p.id === "subscription" ? "Subscribe — $149/mo" : "Switch to Pay as you go"}
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-
-      <section className="mt-6 rounded-xl bg-card shadow-border">
-        <div className="px-5 py-4 text-sm font-semibold">Invoices</div>
-        <ul className="divide-y divide-border">
-          {invoices.map((inv) => (
-            <li key={inv.id} className="flex items-center justify-between px-5 py-3 text-sm">
-              <span>
-                <span className="font-medium">{inv.description}</span>
-                <span className="ml-2 text-muted-foreground">{formatDate(inv.date)}</span>
-              </span>
-              <span className="tabular-nums">${inv.amount}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <BuyCreditsDialog open={buy} onOpenChange={setBuy} />
     </Page>
   );
 }
+

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { Clock, Coins, Eye, EyeOff, FileSpreadsheet, Gauge, Mails, Plus, Trash2, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button";
 import { Page } from "@/components/page";
@@ -31,8 +31,8 @@ type Lang = "curl" | "node" | "python";
 type GroupId = "verify" | "find" | "leads" | "account";
 
 const GROUPS: { id: GroupId; label: string }[] = [
-  { id: "verify", label: "Verify Email API" },
-  { id: "find", label: "Find Email API" },
+  { id: "verify", label: "Verify Emails API" },
+  { id: "find", label: "Find Emails API" },
   { id: "leads", label: "Search Leads API" },
   { id: "account", label: "Account API" },
 ];
@@ -52,12 +52,96 @@ const HTTP_ERRORS: [string, string][] = [
 ];
 
 const VERIFY_RESULTS: [string, string][] = [
-  ["safe", "The inbox exists. Fine to send."],
-  ["valid", "It may work, but the company accepts every address. Risky."],
-  ["invalid", "Do not send. The address does not take mail."],
-  ["do_not_mail", "Do not send. A temporary inbox, or a shared one such as info@."],
-  ["unknown", "No clear answer. Try again later."],
+  ["safe", "The mailbox was confirmed. A role address can still be safe. Check is_safe_to_send if you want to skip those."],
+  ["risky", "The domain accepts every address, so this mailbox was not confirmed on its own. Send with care."],
+  ["invalid", "The mailbox does not exist, or the domain cannot receive mail. Do not send."],
+  ["do_not_mail", "Do not send. A disposable address, or a role address on a catch-all domain."],
+  ["unknown", "The mail server did not give a clear answer. Trying again later often works."],
 ];
+
+function apiVerifyResponse(result: {
+  email: string;
+  result: string;
+  subresult: string;
+  score: number;
+  domain: string;
+  username: string;
+  isDeliverable: boolean;
+  isSafeToSend: boolean;
+  isDisposable: boolean;
+  isCatchAll: boolean;
+  isRole: boolean;
+  isFree: boolean;
+  isNoReply: boolean;
+  hasTag: boolean;
+  mxAcceptsMail: boolean;
+  hasMx: boolean;
+  hasSpf: boolean;
+  hasDkim: boolean;
+  hasDmarc: boolean;
+}) {
+  const [local, domainFromEmail] = result.email.split("@");
+  const domain = result.domain || domainFromEmail || "";
+  let verdict = "unknown";
+  let status = "unknown";
+  let subresult = result.subresult || "unable_to_verify";
+  let acceptAll = "no";
+  if (result.result === "safe") {
+    verdict = "safe";
+    status = "valid";
+    subresult = "mailbox_verified";
+  } else if (result.result === "catch_all" || result.isCatchAll) {
+    verdict = "valid";
+    status = "catch-all";
+    subresult = "catch_all_detected";
+    acceptAll = "yes";
+  } else if (result.result === "invalid") {
+    verdict = "invalid";
+    status = "invalid";
+    subresult = "mailbox_not_found";
+  } else if (result.result === "disposable") {
+    verdict = "do_not_mail";
+    status = "do_not_mail";
+    subresult = "disposable";
+  } else if (result.result === "role") {
+    verdict = result.isSafeToSend ? "safe" : "do_not_mail";
+    status = result.isSafeToSend ? "valid" : "do_not_mail";
+    subresult = result.isSafeToSend ? "mailbox_verified" : "role_based_catch_all_detected";
+  }
+  return {
+    success: true,
+    email: result.email,
+    result: verdict,
+    status,
+    subresult,
+    score: result.score,
+    overall_score: result.score,
+    domain,
+    username: result.username || local,
+    is_deliverable: result.isDeliverable,
+    is_safe_to_send: result.isSafeToSend,
+    is_valid_syntax: result.email.includes("@"),
+    is_disposable: result.isDisposable,
+    is_catch_all: result.isCatchAll,
+    accept_all: acceptAll,
+    is_role_account: result.isRole,
+    is_free_email: result.isFree,
+    mx_accepts_mail: result.mxAcceptsMail,
+    can_connect_smtp: result.hasMx,
+    mx_records: result.hasMx && domain ? [`mx1.${domain}`] : [],
+    smtp_provider: null,
+    has_spf: result.hasSpf,
+    has_dkim_selector: result.hasDkim,
+    has_dmarc: result.hasDmarc,
+    has_tag: result.hasTag,
+    is_no_reply: result.isNoReply,
+    verification_mode: "smtp",
+    free_email: result.isFree,
+    disposable: result.isDisposable,
+    catch_all: result.isCatchAll,
+    role_based: result.isRole,
+  };
+}
 
 type Step = {
   n: string;
@@ -74,7 +158,7 @@ type Endpoint = {
   hint: string;
   title: string;
   summary: string;
-  limits: { label: string; value: string }[];
+  limits: { label: string; value: string; icon?: LucideIcon }[];
   steps: Step[];
   fields: [string, string][];
   results?: [string, string][];
@@ -119,7 +203,7 @@ function ApiPage() {
             size="sm"
             onClick={() => {
               if (keys.filter((k) => k.status === "active").length >= plan.maxKeys) {
-                toast.message("Extra keys are on Subscription");
+                toast.message("You already have the maximum number of keys");
                 return;
               }
               setCreateOpen(true);
@@ -185,7 +269,7 @@ function ApiPage() {
         ))}
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-xl bg-card shadow-border lg:grid lg:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="mt-4 overflow-hidden rounded-xl bg-card shadow-border lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="flex gap-1 overflow-x-auto border-b border-border p-2 lg:block lg:border-b-0 lg:border-r lg:p-3">
           {endpoints.map((item) => (
             <button
@@ -217,8 +301,11 @@ function ApiPage() {
           <dl className="mt-4 grid overflow-hidden rounded-xl border border-border sm:grid-cols-3">
             {endpoint.limits.map((limit) => (
               <div key={limit.label} className="border-b border-border px-4 py-3 last:border-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
-                <dt className="text-xs text-muted-foreground">{limit.label}</dt>
-                <dd className="mt-1 text-sm font-medium">{limit.value}</dd>
+                <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  {limit.icon ? <limit.icon className="size-3.5" /> : null}
+                  {limit.label}
+                </dt>
+                <dd className="mt-1 whitespace-pre-line text-sm font-medium">{limit.value}</dd>
               </div>
             ))}
           </dl>
@@ -233,18 +320,7 @@ function ApiPage() {
                 const result = runVerify(email, "api") ?? verifyEmail(email, "api");
                 const key = keys.find((k) => k.status === "active");
                 if (key) touchKey(key.key);
-                setLive(
-                  JSON.stringify(
-                    {
-                      email: result.email,
-                      result: result.result,
-                      score: result.score,
-                      is_safe_to_send: result.isSafeToSend,
-                    },
-                    null,
-                    2,
-                  ),
-                );
+                setLive(JSON.stringify(apiVerifyResponse(result), null, 2));
                 setBusy(false);
               }}
             >
@@ -274,7 +350,7 @@ function ApiPage() {
           </div>
 
           <Map title="Response" rows={endpoint.fields} />
-          {endpoint.results ? <Map title="result" rows={endpoint.results} /> : null}
+          {endpoint.results ? <Map title="result" rows={endpoint.results} colorName /> : null}
           <Map title="If the call fails" rows={HTTP_ERRORS} />
         </div>
       </div>
@@ -326,7 +402,7 @@ function ApiPage() {
                   onClick={() => {
                     const created = createKey(keyName || "Untitled key");
                     if (!created) {
-                      toast.message("Extra keys are on Subscription");
+                      toast.message("Extra keys are on Outreach");
                       return;
                     }
                     setFresh(created.key);
@@ -386,14 +462,22 @@ function Example({ title, code }: { title: string; code: string }) {
   );
 }
 
-function Map({ title, rows }: { title: string; rows: [string, string][] }) {
+const RESULT_COLOR: Record<string, string> = {
+  safe: "text-safe",
+  risky: "text-risk",
+  invalid: "text-invalid",
+  do_not_mail: "text-[#c2410c]",
+  unknown: "text-unknown",
+};
+
+function Map({ title, rows, colorName }: { title: string; rows: [string, string][]; colorName?: boolean }) {
   return (
     <div className="mt-6">
       <h4 className="text-sm font-semibold">{title}</h4>
       <div className="mt-2 overflow-hidden rounded-xl border border-border">
         {rows.map(([name, detail]) => (
           <div key={name} className="grid grid-cols-1 gap-1 border-b border-border px-4 py-3 last:border-0 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-baseline">
-            <code className="font-mono text-xs">{name}</code>
+            <code className={cn("font-mono text-xs font-medium", colorName && RESULT_COLOR[name])}>{name}</code>
             <p className="text-sm text-muted-foreground">{detail}</p>
           </div>
         ))}
@@ -414,14 +498,14 @@ function singleVerify(key: string): Endpoint {
   const body = { email: "user@example.com" };
   return {
     id: "single",
-    label: "Single",
-    hint: "One address",
-    title: "Verify one email",
-    summary: "Check whether an address is safe to send to.",
+    label: "Single Email Verifier",
+    hint: "One email, verified instantly",
+    title: "Single Email Verifier",
+    summary: "Real-time result, fast enough for a signup form.",
     limits: [
-      { label: "Credits", value: "1 per email" },
-      { label: "At once", value: "5 checks" },
-      { label: "Timeout", value: "30 seconds" },
+      { label: "Credits", value: "1 per email", icon: Coins },
+      { label: "Timeout", value: "30 seconds", icon: Clock },
+      { label: "Rate limit", value: "5 run at once, and further requests queue automatically", icon: Gauge },
     ],
     steps: [
       {
@@ -431,17 +515,52 @@ function singleVerify(key: string): Endpoint {
         path,
         samples: samples({ key, method: "POST", path, json: body }),
         response: `{
-  "email": "user@example.com",
+  "success": true,
+  "email": "john.doe@example.com",
   "result": "safe",
-  "score": 98,
-  "is_safe_to_send": true
+  "status": "valid",
+  "subresult": "mailbox_verified",
+  "score": 100,
+  "overall_score": 100,
+  "domain": "example.com",
+  "username": "john.doe",
+  "is_deliverable": true,
+  "is_safe_to_send": true,
+  "is_valid_syntax": true,
+  "is_disposable": false,
+  "is_catch_all": false,
+  "accept_all": "resolved",
+  "is_role_account": false,
+  "is_free_email": false,
+  "mx_accepts_mail": true,
+  "can_connect_smtp": true,
+  "mx_records": ["mx1.example.com"],
+  "smtp_provider": "Google",
+  "has_spf": true,
+  "has_dkim_selector": true,
+  "has_dmarc": true,
+  "has_tag": false,
+  "is_no_reply": false,
+  "verification_mode": "smtp",
+  "free_email": false,
+  "disposable": false,
+  "catch_all": false,
+  "role_based": false
 }`,
       },
     ],
     fields: [
-      ["result", "The decision. See the list below."],
-      ["is_safe_to_send", "True only when result is safe."],
-      ["score", "0 to 100. Higher is safer to send."],
+      ["result", "The verdict: safe, risky, invalid, do_not_mail, or unknown."],
+      ["status", "Raw status: valid, catch-all, invalid, do_not_mail, or unknown. A catch-all address is result risky and status catch-all."],
+      ["subresult", "Why the verdict was chosen."],
+      ["score", "0 to 100. overall_score is the same number."],
+      ["is_safe_to_send", "True only for a confirmed mailbox that is not catch-all, disposable, or a role account."],
+      ["accept_all", "yes: the domain accepts every address and this one was not confirmed. resolved: the domain accepts every address, but this mailbox was still confirmed. no: the domain rejects unknown addresses."],
+      ["is_catch_all / catch_all", "This mailbox could not be confirmed because the domain accepts every address."],
+      ["is_disposable / disposable", "A temporary inbox."],
+      ["is_role_account / role_based", "A shared inbox such as info@, sales@, or support@."],
+      ["is_free_email / free_email", "A free mailbox such as Gmail or Outlook.com."],
+      ["smtp_provider, mx_records", "Who hosts the domain's mail, and its mail servers."],
     ],
     results: VERIFY_RESULTS,
   };
@@ -452,14 +571,14 @@ function batchVerify(key: string): Endpoint {
   const body = { emails: ["a@acme.com", "b@acme.com"] };
   return {
     id: "batch",
-    label: "Batch",
-    hint: "Up to 100",
-    title: "Verify up to 100",
-    summary: "Check a short list in one call. Each address comes back with the same fields as a single check.",
+    label: "Batch Email Verifier",
+    hint: "Up to 100 emails in one batch",
+    title: "Batch Email Verifier",
+    summary: "Up to 100 emails per request, answered synchronously. Each result has the same fields as the single endpoint.",
     limits: [
-      { label: "Credits", value: "1 per email" },
-      { label: "Per call", value: "100 addresses" },
-      { label: "Rate limit", value: "5 calls a minute" },
+      { label: "Credits", value: "1 per email", icon: Coins },
+      { label: "Per call", value: "100 addresses", icon: Mails },
+      { label: "Rate limit", value: "5 requests per minute. Exceeding it blocks the key for 10 minutes.", icon: Gauge },
     ],
     steps: [
       {
@@ -469,11 +588,15 @@ function batchVerify(key: string): Endpoint {
         path,
         samples: samples({ key, method: "POST", path, json: body }),
         response: `{
-  "total": 2,
-  "credits_used": 2,
+  "success": true,
+  "total": 3,
+  "verified": 3,
+  "failed": 0,
+  "credits_used": 3,
   "results": [
-    { "email": "a@acme.com", "result": "safe", "is_safe_to_send": true },
-    { "email": "b@acme.com", "result": "invalid", "is_safe_to_send": false }
+    { "success": true, "email": "user1@example.com", "result": "safe", "subresult": "mailbox_verified", "score": 100, "accept_all": "no" },
+    { "success": true, "email": "user2@example.com", "result": "invalid", "subresult": "mailbox_not_found", "score": 10, "accept_all": "no" },
+    { "success": true, "email": "user3@example.com", "result": "valid", "status": "catch-all", "subresult": "catch_all_detected", "score": 75, "accept_all": "yes" }
   ]
 }`,
       },
@@ -490,14 +613,14 @@ function batchVerify(key: string): Endpoint {
 function bulkVerify(key: string): Endpoint {
   return {
     id: "bulk",
-    label: "Bulk",
-    hint: "A file",
-    title: "Verify a file",
-    summary: "Upload a CSV, XLS, or XLSX. Check the job until it is completed, then download the spreadsheet.",
+    label: "Bulk Email Verifier",
+    hint: "Multiple files, unlimited emails",
+    title: "Bulk Email Verifier",
+    summary: "Upload a CSV, XLS, or XLSX. No limit on file size, number of emails, or number of files, as long as you have the credits. Check the job until it is completed, then download the spreadsheet.",
     limits: [
-      { label: "Credits", value: "1 per unique email" },
-      { label: "File", value: "CSV, XLS, XLSX" },
-      { label: "Results kept", value: "30 days" },
+      { label: "Credits", value: "1 per unique email", icon: Coins },
+      { label: "File", value: "CSV, XLS, or XLSX. No limit on size, emails, or files", icon: FileSpreadsheet },
+      { label: "Results kept", value: "30 days", icon: Clock },
     ],
     steps: [
       {
@@ -507,8 +630,9 @@ function bulkVerify(key: string): Endpoint {
         path: "/api/v1/bulk",
         samples: fileSamples(key),
         response: `{
+  "message": "Batches are created and sent to Queue !",
   "projectId": "b1f2c3d4",
-  "emailCount": 1840
+  "emailCount": 4820
 }`,
       },
       {
@@ -518,9 +642,15 @@ function bulkVerify(key: string): Endpoint {
         path: "/api/v1/bulk/{projectId}",
         samples: samples({ key, method: "GET", path: "/api/v1/bulk/PROJECT_ID" }),
         response: `{
+  "success": true,
   "projectId": "b1f2c3d4",
+  "name": "contacts.csv",
   "status": "processing",
-  "emailCount": 1840
+  "total": 4820,
+  "processed": 3100,
+  "progress_percent": 64,
+  "summary": { "safe": 2210, "valid": 180, "invalid": 520, "catch-all": 0, "do_not_mail": 95, "unknown": 95 },
+  "download_url": null
 }`,
       },
       {
@@ -563,10 +693,18 @@ function findEndpoint(key: string): Endpoint {
         path,
         samples: samples({ key, method: "POST", path, json: body }),
         response: `{
+  "success": true,
   "found": true,
   "email": "john.smith@acme.com",
   "verified": true,
-  "creditsCharged": 5
+  "confidence": 95,
+  "pattern": "first.last",
+  "firstName": "John",
+  "lastName": "Smith",
+  "domain": "acme.com",
+  "status": { "result": "safe", "subresult": "mailbox_verified" },
+  "creditsCharged": 5,
+  "creditsRemaining": 4821
 }`,
       },
     ],
@@ -650,7 +788,7 @@ function accountEndpoint(key: string, credits: number, planName: string): Endpoi
       },
     ],
     fields: [
-      ["plan", "Pay as you go or Subscription."],
+      ["plan", "Pay as you go or Outreach."],
       ["credits", "Credits left on this account."],
     ],
   };

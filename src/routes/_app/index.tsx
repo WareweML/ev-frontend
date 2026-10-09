@@ -11,10 +11,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { BuyCreditsDialog, CREDIT_PACKS } from "@/components/buy-credits";
+import { CREDIT_PACKS } from "@/components/buy-credits";
+import { CreditsPurchase } from "@/components/credits-purchase";
 import { downloadJob } from "@/components/job-row";
 import { Page } from "@/components/page";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,7 +66,7 @@ function Dashboard() {
             body="Find people to contact, then save them as a list."
             icon={Users}
             to="/leads"
-            cta={plan.features.leads ? "Search leads" : "On Subscription"}
+            cta={plan.features.leads ? "Search leads" : "On Outreach"}
           />
         </div>
         <Projects tab={tab} onTab={setTab} />
@@ -90,7 +92,7 @@ function CreditsBanner() {
           </p>
           <p className="mt-1 text-sm text-muted-foreground">{formatNumber(used)} credits used so far.</p>
         </div>
-        <div className="flex flex-col gap-2 sm:items-end">
+        <div className="flex flex-col items-start gap-2">
           <p className="text-xs font-medium">Buy credits</p>
           <div className="flex flex-wrap gap-2">
             {CREDIT_PACKS.map((pack) => (
@@ -98,21 +100,31 @@ function CreditsBanner() {
                 key={pack.credits}
                 type="button"
                 variant={pack.recommended ? "default" : "outline"}
+                className="h-auto min-h-12 flex-col gap-0 px-4 py-2"
                 onClick={() => setBuy(pack.credits)}
               >
-                {formatNumber(pack.credits)} · ${pack.price}
+                <span>{formatNumber(pack.credits)} credits</span>
+                {pack.badge ? (
+                  <span className={cn("text-[10px] font-semibold tracking-wide uppercase", pack.recommended ? "text-primary-foreground/80" : "text-primary")}>
+                    {pack.badge}
+                  </span>
+                ) : null}
               </Button>
             ))}
           </div>
         </div>
       </section>
-      <BuyCreditsDialog
+      <Dialog
         open={buy !== null}
-        initialCredits={buy ?? undefined}
-        onOpenChange={(v) => {
-          if (!v) setBuy(null);
+        onOpenChange={(open) => {
+          if (!open) setBuy(null);
         }}
-      />
+      >
+        <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto bg-background p-5 sm:p-6">
+          <DialogTitle className="sr-only">Buy Credits</DialogTitle>
+          {buy !== null ? <CreditsPurchase key={buy} initialCredits={buy} onDone={() => setBuy(null)} /> : null}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -216,15 +228,17 @@ function Projects({ tab, onTab }: { tab: ProjectTab; onTab: (t: ProjectTab) => v
         </Empty>
       ) : (
         <div className="-mx-5 overflow-x-auto px-5">
-          <div className="min-w-[46rem]">
-            <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(11rem,1.2fr)_6.5rem_6.5rem_auto] gap-3 border-b border-border py-2 text-xs text-muted-foreground">
-              <span>Project</span>
-              <span>{tab === "leads" ? "Count" : "Emails"}</span>
-              <span>Status</span>
-              <span>Created</span>
-              <span className="text-right">Actions</span>
-            </div>
-            <ul className="divide-y divide-border">
+          <table className="w-full min-w-[52rem] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-border text-xs text-muted-foreground">
+                <th className="w-[28%] py-2 pr-4 font-normal">Project</th>
+                <th className="w-[32%] py-2 pr-4 font-normal">{tab === "leads" ? "Count" : "Emails"}</th>
+                <th className="w-28 py-2 pr-4 font-normal">Status</th>
+                <th className="w-28 py-2 pr-4 font-normal">Created</th>
+                <th className="w-44 py-2 text-right font-normal">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
               {tab === "verify"
                 ? verifyRows.map((job) => (
                     <ProjectTableRow
@@ -290,8 +304,8 @@ function Projects({ tab, onTab }: { tab: ProjectTab; onTab: (t: ProjectTab) => v
                     );
                   })
                 : null}
-            </ul>
-          </div>
+            </tbody>
+          </table>
         </div>
       )}
     </section>
@@ -354,17 +368,19 @@ function ProjectTableRow({
 }) {
   const total = parts?.reduce((n, part) => n + part.n, 0) || count || 1;
   return (
-    <li className="grid grid-cols-[minmax(0,1.4fr)_minmax(11rem,1.2fr)_6.5rem_6.5rem_auto] items-center gap-3 py-3">
-      <Link to={to} search={search as never} className="flex min-w-0 items-center gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Folder className="size-4" />
-        </span>
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-medium">{name}</span>
-          {note ? <span className="block truncate text-xs text-muted-foreground">{note}</span> : null}
-        </span>
-      </Link>
-      <div className="min-w-0">
+    <tr className="border-b border-border last:border-0">
+      <td className="py-3 pr-4 align-middle">
+        <Link to={to} search={search as never} className="flex min-w-0 items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Folder className="size-4" />
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-medium">{name}</span>
+            {note ? <span className="block truncate text-xs text-muted-foreground">{note}</span> : null}
+          </span>
+        </Link>
+      </td>
+      <td className="py-3 pr-4 align-middle">
         <p className="text-sm font-medium tabular-nums">
           {formatNumber(count)} {unit}
         </p>
@@ -385,40 +401,44 @@ function ProjectTableRow({
             </p>
           </>
         ) : null}
-      </div>
-      <StatusPill status={status} />
-      <span className="text-xs text-muted-foreground">{formatDate(date)}</span>
-      <div className="flex items-center justify-end gap-1">
-        <Button type="button" size="sm" disabled={status === "Running"} onClick={onDownload}>
-          <Download />
-          Download
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" variant="ghost" size="icon-sm" aria-label={`More for ${name}`}>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {onDownloadValid ? (
-              <DropdownMenuItem onSelect={onDownloadValid}>
+      </td>
+      <td className="py-3 pr-4 align-middle">
+        <StatusPill status={status} />
+      </td>
+      <td className="py-3 pr-4 align-middle text-xs text-muted-foreground">{formatDate(date)}</td>
+      <td className="py-3 align-middle">
+        <div className="flex items-center justify-end gap-1">
+          <Button type="button" size="sm" disabled={status === "Running"} onClick={onDownload}>
+            <Download />
+            Download
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="ghost" size="icon-sm" aria-label={`More for ${name}`}>
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onDownloadValid ? (
+                <DropdownMenuItem onSelect={onDownloadValid}>
+                  <Download className="size-4" />
+                  Download valid only
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuItem onSelect={onDownload}>
                 <Download className="size-4" />
-                Download valid only
+                Download all
               </DropdownMenuItem>
-            ) : null}
-            <DropdownMenuItem onSelect={onDownload}>
-              <Download className="size-4" />
-              Download all
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={onDelete}>
-              <Trash2 className="size-4" />
-              Delete project
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </li>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={onDelete}>
+                <Trash2 className="size-4" />
+                Delete project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </td>
+    </tr>
   );
 }
 

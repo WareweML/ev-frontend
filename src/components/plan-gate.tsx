@@ -8,7 +8,7 @@ export function PlanGate({ title }: { title: string }) {
       <span className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
         <Lock className="size-7" />
       </span>
-      <h2 className="mt-5 text-xl font-semibold tracking-tight">{title} is on Subscription</h2>
+      <h2 className="mt-5 text-xl font-semibold tracking-tight">{title} is on Outreach</h2>
       <Button asChild className="mt-6 min-w-44">
         <Link to="/billing">See plans</Link>
       </Button>

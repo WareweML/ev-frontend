@@ -18,8 +18,9 @@ import {
 import { toast } from "sonner";
 import { Logo } from "@/components/logo";
 import { CommandPalette } from "@/components/command-palette";
-import { BuyCreditsDialog } from "@/components/buy-credits";
+import { CreditsPurchase } from "@/components/credits-purchase";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,7 +94,16 @@ function NavItem({
   );
 }
 
-function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+function NavList({
+  pathname,
+  onNavigate,
+  onBuy,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+  onBuy: () => void;
+}) {
+  const credits = useAppStore((s) => s.credits);
   return (
     <nav className="flex min-h-0 flex-1 flex-col px-3 py-3">
       <div className="flex flex-col gap-1">
@@ -101,18 +111,36 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
           <NavItem key={item.to} {...item} pathname={pathname} onNavigate={onNavigate} />
         ))}
       </div>
-      <div className="mt-auto border-t border-border pt-3">
-        <div className="flex flex-col gap-1">
-          {ACCOUNT.map((item) => (
-            <NavItem key={item.to} {...item} pathname={pathname} onNavigate={onNavigate} />
-          ))}
+      <div className="mt-auto">
+        {credits < 1000 ? (
+          <div className="mb-3 rounded-lg bg-primary/10 p-3">
+            <p className="text-sm font-medium">Your credits are running low</p>
+            <Button type="button" size="sm" className="mt-2 w-full" onClick={onBuy}>
+              Buy Credits
+            </Button>
+          </div>
+        ) : null}
+        <div className="border-t border-border pt-3">
+          <div className="flex flex-col gap-1">
+            {ACCOUNT.map((item) => (
+              <NavItem key={item.to} {...item} pathname={pathname} onNavigate={onNavigate} />
+            ))}
+          </div>
         </div>
       </div>
     </nav>
   );
 }
 
-function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+function SidebarBody({
+  pathname,
+  onNavigate,
+  onBuy,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+  onBuy: () => void;
+}) {
   return (
     <div className="flex h-full flex-col bg-card text-foreground">
       <div className="border-b border-border px-5 py-4">
@@ -120,7 +148,7 @@ function SidebarBody({ pathname, onNavigate }: { pathname: string; onNavigate?: 
           <Logo />
         </Link>
       </div>
-      <NavList pathname={pathname} onNavigate={onNavigate} />
+      <NavList pathname={pathname} onNavigate={onNavigate} onBuy={onBuy} />
     </div>
   );
 }
@@ -148,12 +176,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh bg-background">
       <aside className="sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col border-r border-border bg-card lg:flex">
-        <SidebarBody pathname={pathname} />
+        <SidebarBody pathname={pathname} onBuy={() => setBuy(true)} />
       </aside>
 
       <Sheet open={mobile} onOpenChange={setMobile}>
         <SheetContent side="left" className="p-0">
-          <SidebarBody pathname={pathname} onNavigate={() => setMobile(false)} />
+          <SidebarBody pathname={pathname} onNavigate={() => setMobile(false)} onBuy={() => setBuy(true)} />
         </SheetContent>
       </Sheet>
 
@@ -247,7 +275,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </nav>
 
       <CommandPalette open={cmd} onOpenChange={setCmd} onBuy={() => setBuy(true)} />
-      <BuyCreditsDialog open={buy} onOpenChange={setBuy} />
+      <Dialog open={buy} onOpenChange={setBuy}>
+        <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto bg-background p-5 sm:p-6">
+          <DialogTitle className="sr-only">Buy Credits</DialogTitle>
+          {buy ? <CreditsPurchase initialCredits={25000} onDone={() => setBuy(false)} /> : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

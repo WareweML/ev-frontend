@@ -21,7 +21,7 @@ export const PAGE_META: Record<string, { title: string; kicker: string }> = {
   },
   "/billing": {
     title: "Billing",
-    kicker: "Pay as you go or Subscription.",
+    kicker: "Outreach, or pay as you go.",
   },
   "/profile": {
     title: "Profile",
@@ -33,7 +33,7 @@ export const PAGE_META: Record<string, { title: string; kicker: string }> = {
   },
   "/usage": {
     title: "Usage",
-    kicker: "This billing period.",
+    kicker: "Recent Usage Summary and Activity Logs",
   },
 };
 

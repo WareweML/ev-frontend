@@ -13,28 +13,35 @@ import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const CREDIT_PACKS = [
-  { credits: 1000, price: 15, label: "1,000 credits", each: "1.5¢" },
-  { credits: 5000, price: 60, label: "5,000 credits", each: "1.2¢", recommended: true },
-  { credits: 25000, price: 250, label: "25,000 credits", each: "1.0¢" },
+  { credits: 10000, price: 20, label: "10,000 credits", each: "$0.002" },
+  { credits: 25000, price: 45, label: "25,000 credits", each: "$0.0018", recommended: true, badge: "Most popular" },
+  { credits: 100000, price: 140, label: "100,000 credits", each: "$0.0014", badge: "Most value" },
 ];
+
+function packPrice(amount: number) {
+  return Number.isInteger(amount) ? `$${formatNumber(amount)}` : `$${amount.toFixed(2)}`;
+}
 
 export function BuyCreditsDialog({
   open,
   onOpenChange,
   initialCredits,
+  packs = CREDIT_PACKS,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   initialCredits?: number;
+  packs?: { credits: number; price: number; label: string; each: string; recommended?: boolean; badge?: string }[];
 }) {
   const buy = useAppStore((s) => s.buyCredits);
-  const [pick, setPick] = useState(initialCredits ?? CREDIT_PACKS[1]!.credits);
-  const pack = CREDIT_PACKS.find((p) => p.credits === pick) ?? CREDIT_PACKS[1]!;
+  const fallback = packs.find((pack) => pack.recommended) ?? packs[0]!;
+  const [pick, setPick] = useState(initialCredits ?? fallback.credits);
+  const pack = packs.find((p) => p.credits === pick) ?? fallback;
 
   useEffect(() => {
     if (!open) return;
-    setPick(initialCredits ?? CREDIT_PACKS[1]!.credits);
-  }, [open, initialCredits]);
+    setPick(initialCredits ?? fallback.credits);
+  }, [open, initialCredits, fallback.credits]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -44,7 +51,7 @@ export function BuyCreditsDialog({
         </DialogHeader>
         <p className="text-sm text-muted-foreground">Credits never expire.</p>
         <div className="grid gap-2">
-          {CREDIT_PACKS.map((p) => (
+          {packs.map((p) => (
             <button
               type="button"
               key={p.credits}
@@ -60,7 +67,7 @@ export function BuyCreditsDialog({
                   {p.each} each{p.recommended ? " · most teams pick this" : ""}
                 </span>
               </span>
-              <span className="text-sm font-semibold tabular-nums">${p.price}</span>
+              <span className="text-sm font-semibold tabular-nums">{packPrice(p.price)}</span>
             </button>
           ))}
         </div>
@@ -76,7 +83,7 @@ export function BuyCreditsDialog({
               onOpenChange(false);
             }}
           >
-            Buy {pack.label} — ${pack.price}
+            Buy {pack.label} — {packPrice(pack.price)}
           </Button>
         </DialogFooter>
       </DialogContent>

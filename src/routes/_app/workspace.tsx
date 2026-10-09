@@ -48,7 +48,7 @@ function WorkspacePage() {
 
   function invite() {
     if (!plan.features.team) {
-      toast.message("Team is on Subscription");
+      toast.message("Team is on Outreach");
       return;
     }
     const result = inviteMember(email, role);
@@ -59,7 +59,7 @@ function WorkspacePage() {
       setInviteOpen(false);
       return;
     }
-    if (result === "plan") toast.message("Team is on Subscription");
+    if (result === "plan") toast.message("Team is on Outreach");
     else if (result === "exists") toast.message("Already on this workspace");
     else toast.message("Enter a work email");
   }
@@ -93,7 +93,7 @@ function WorkspacePage() {
               </Button>
             ) : (
               <Button asChild>
-                <Link to="/billing">On Subscription</Link>
+                <Link to="/billing">On Outreach</Link>
               </Button>
             )}
           </div>

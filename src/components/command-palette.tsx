@@ -89,7 +89,7 @@ export function CommandPalette({
             <Command.Group heading="Account" className="px-1 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               <Item onSelect={() => go("/api")} icon={KeyRound} label="API keys & docs" />
               <Item onSelect={() => go("/usage")} icon={Code2} label="Usage" />
-              <Item onSelect={() => go("/billing")} icon={CreditCard} label="Pay as you go or Subscription" />
+              <Item onSelect={() => go("/billing")} icon={CreditCard} label="Pay as you go or Outreach" />
               <Item onSelect={() => go("/workspace")} icon={Building2} label="Workspace" />
               <Item
                 onSelect={() => {
@@ -97,7 +97,7 @@ export function CommandPalette({
                   onBuy();
                 }}
                 icon={CreditCard}
-                label="Buy 5,000 credits — $60"
+                label="Buy credits"
               />
             </Command.Group>
           </Command.List>

@@ -258,7 +258,7 @@ type State = {
   setMemberRole: (id: string, role: TeamRole) => boolean;
   toggleFollow: (domain: string) => void;
   buyCredits: (credits: number, price: number, label: string) => void;
-  setPlan: (id: PlanId) => void;
+  setPlan: (id: PlanId, monthlyCredits?: number) => void;
 };
 
 export const useAppStore = create<State>()(
@@ -277,9 +277,39 @@ export const useAppStore = create<State>()(
       recentLeadQueries: [],
       usage: seedUsage(),
       invoices: [
-        { id: "inv_2041", date: Date.parse("2026-09-01T00:00:00Z"), amount: 149, description: "Subscription · September", status: "paid" },
-        { id: "inv_1988", date: Date.parse("2026-08-01T00:00:00Z"), amount: 149, description: "Subscription · August", status: "paid" },
-        { id: "inv_1902", date: Date.parse("2026-07-12T00:00:00Z"), amount: 60, description: "5,000 extra credits", status: "paid" },
+        {
+          id: "inv_2041",
+          date: Date.parse("2026-09-01T09:44:00"),
+          amount: 45,
+          description: "25,000 credits",
+          status: "paid",
+          credits: 25000,
+          buyer: "Kumar Manaswi",
+          method: "Card Payment",
+          balanceAfter: 55000,
+        },
+        {
+          id: "inv_1988",
+          date: Date.parse("2026-08-01T11:02:00"),
+          amount: 45,
+          description: "25,000 credits",
+          status: "paid",
+          credits: 25000,
+          buyer: "Kumar Manaswi",
+          method: "Card Payment",
+          balanceAfter: 30000,
+        },
+        {
+          id: "inv_1902",
+          date: Date.parse("2026-07-12T15:14:00"),
+          amount: 9,
+          description: "5,000 credits",
+          status: "paid",
+          credits: 5000,
+          buyer: "Kumar Manaswi",
+          method: "Card Payment",
+          balanceAfter: 5000,
+        },
       ],
       workspaceName: "Warewe",
       members: seedMembers(),
@@ -552,17 +582,34 @@ export const useAppStore = create<State>()(
       },
 
       buyCredits: (credits, price, label) =>
-        set((s) => ({
-          credits: s.credits + credits,
-          invoices: [
-            { id: uid("inv"), date: Date.now(), amount: price, description: label, status: "paid" as const },
-            ...s.invoices,
-          ],
-        })),
+        set((s) => {
+          const balanceAfter = s.credits + credits;
+          const you = s.members.find((m) => m.you);
+          return {
+            credits: balanceAfter,
+            invoices: [
+              {
+                id: uid("inv"),
+                date: Date.now(),
+                amount: price,
+                description: label,
+                status: "paid" as const,
+                credits,
+                buyer: you?.name ?? "Kumar Manaswi",
+                method: "Card Payment",
+                balanceAfter,
+              },
+              ...s.invoices,
+            ],
+          };
+        }),
 
-      setPlan: (id) => {
+      setPlan: (id, monthlyCredits) => {
         const plan = PLAN_BY_ID[asPlanId(id)];
-        set({ planId: plan.id, planCredits: plan.monthlyCredits });
+        set({
+          planId: plan.id,
+          planCredits: plan.id === "subscription" ? (monthlyCredits ?? plan.monthlyCredits) : 0,
+        });
       },
     }),
     {

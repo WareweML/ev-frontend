@@ -139,6 +139,10 @@ export type Invoice = {
   amount: number;
   description: string;
   status: "paid" | "open";
+  credits: number;
+  buyer: string;
+  method: string;
+  balanceAfter: number;
 };
 
 export type Company = {

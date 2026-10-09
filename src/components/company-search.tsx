@@ -467,7 +467,7 @@ function TechCard({ view }: { view: CompanySearchView }) {
           </Button>
         ) : (
           <Button asChild variant="outline" size="sm" className="mt-2">
-            <Link to="/billing">On Subscription</Link>
+            <Link to="/billing">On Outreach</Link>
           </Button>
         )}
       </div>
@@ -533,7 +533,7 @@ function SimilarCard({
           <p className="mt-2 text-sm font-medium">
             {formatNumber(view.similar.length)} similar companies to {view.name}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">On Subscription</p>
+          <p className="mt-1 text-sm text-muted-foreground">On Outreach</p>
           <Button asChild size="sm" className="mt-3">
             <Link to="/billing">See plans</Link>
           </Button>
