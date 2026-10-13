@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { formatNumber } from "@/lib/format";
 import { PLAN_BY_ID, type PlanId } from "@/lib/plans";
 import { useAppStore, usePlan } from "@/lib/store";
@@ -301,7 +302,7 @@ function PlanPanel({
                     >
                       {tickLabel(credits)}
                       {credits === 100000 ? (
-                        <span className="mt-0.5 text-[10px] font-semibold tracking-wide text-primary">Most value</span>
+                        <span className="mt-0.5 text-[11px] font-medium tracking-wide text-primary">Most value</span>
                       ) : null}
                     </button>
                   </div>
@@ -312,9 +313,9 @@ function PlanPanel({
 
           <div className="lg:border-l lg:border-border lg:pl-8">
             {STEP_BADGE[step.credits] ? (
-              <span className="mb-3 inline-flex rounded-full bg-[#e8eeff] px-3 py-1 text-xs font-semibold tracking-wide text-primary uppercase">
+              <Badge variant="primary" className="mb-3">
                 {STEP_BADGE[step.credits]}
-              </span>
+              </Badge>
             ) : null}
             <p className="text-3xl font-semibold tracking-tight">
               {money(step.price)}
