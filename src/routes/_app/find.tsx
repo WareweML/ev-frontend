@@ -218,7 +218,7 @@ function PersonFind({ title, mode, onMode }: { title: string; mode: "person" | "
         busy ? null : (
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 bg-muted px-4 py-4 text-center text-sm text-muted-foreground">
             <button type="button" onClick={() => void trySatya()} className="hover:text-foreground">
-              Give it a try with <span className="font-medium text-primary">Satya Nadella</span> at microsoft.com.
+              Give it a try with <span className="font-medium text-primary">Satya Nadella</span> at microsoft.com
             </button>
             <span>or</span>
             <button
@@ -227,7 +227,7 @@ function PersonFind({ title, mode, onMode }: { title: string; mode: "person" | "
               className="inline-flex items-center gap-2 hover:text-foreground"
             >
               <Upload className="size-4 text-primary" />
-              Upload a list of names and domains to find
+              upload a list of names and domains
             </button>
           </div>
         )

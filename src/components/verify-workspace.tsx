@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, CircleHelp, Download, Folder, MoreHorizontal, MousePointerClick, ShieldCheck, Trash2, TriangleAlert, X } from "lucide-react";
+import { BarChart3, CircleHelp, Download, Folder, MoreHorizontal, MousePointerClick, ShieldCheck, Trash2, TriangleAlert, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Dropzone } from "@/components/dropzone";
 import { HowItWorks } from "@/components/how-it-works";
@@ -148,13 +148,20 @@ function ListEmail({ tab, onTab }: { tab: "file" | "one"; onTab: (t: "file" | "o
       </section>
 
       {tab === "one" ? (
-        <button
-          type="button"
-          onClick={() => tryRef.current?.()}
-          className="w-full bg-muted px-4 py-4 text-center text-sm text-muted-foreground hover:text-foreground"
-        >
-          Give it a try with <span className="font-medium text-primary">{TRY_EMAIL}</span>.
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 bg-muted px-4 py-4 text-center text-sm text-muted-foreground">
+          <button type="button" onClick={() => tryRef.current?.()} className="hover:text-foreground">
+            Give it a try with <span className="font-medium text-primary">{TRY_EMAIL}</span>
+          </button>
+          <span>or</span>
+          <button
+            type="button"
+            onClick={() => setTab("file")}
+            className="inline-flex items-center gap-2 hover:text-foreground"
+          >
+            <Upload className="size-4 text-primary" />
+            upload a list of emails to validate
+          </button>
+        </div>
       ) : null}
 
       <section className="rounded-xl bg-card px-5 shadow-border">

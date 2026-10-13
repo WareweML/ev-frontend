@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, Coins, Eye, EyeOff, FileSpreadsheet, Gauge, KeyRound, Mail, Mails, Plus, Search, Trash2, Users, type LucideIcon } from "lucide-react";
+import { Clock, Coins, Eye, EyeOff, FileSpreadsheet, FileText, Gauge, KeyRound, Mail, Mails, Plus, Search, Trash2, Users, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button";
 import { Page } from "@/components/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -199,19 +200,31 @@ function ApiPage() {
       <section className="rounded-xl bg-card shadow-border">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold">Manage your API keys for integrating with Emailverifier.io</h2>
-          <Button
-            size="sm"
-            onClick={() => {
-              if (keys.filter((k) => k.status === "active").length >= plan.maxKeys) {
-                toast.message("You already have the maximum number of keys");
-                return;
-              }
-              setCreateOpen(true);
-            }}
-          >
-            <Plus />
-            New key
-          </Button>
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon-sm" asChild>
+                  <a href="https://app.emailverifier.io/api-docs" target="_blank" rel="noreferrer" aria-label="View full Public API Documentation">
+                    <FileText />
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>View full Public API Documentation</TooltipContent>
+            </Tooltip>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (keys.filter((k) => k.status === "active").length >= plan.maxKeys) {
+                  toast.message("You already have the maximum number of keys");
+                  return;
+                }
+                setCreateOpen(true);
+              }}
+            >
+              <Plus />
+              New key
+            </Button>
+          </div>
         </div>
         {keys.length === 0 ? (
           <p className="px-4 py-6 text-sm text-muted-foreground">No keys yet.</p>
